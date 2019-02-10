@@ -1,5 +1,4 @@
 [Mesh]
-#  displacements = 'disp_x disp_y disp_z' #Define displacements for deformed mesh
   type = FileMesh
   file = mesh/plateXY-2.msh 
   uniform_refine = 0
@@ -7,6 +6,31 @@
   boundary_name = 'left right front back'
   block_id = '1'
   block_name = 'vol'
+[]
+
+[GlobalParams]
+  displacements = 'disp_x disp_y disp_z'
+[]
+
+[Modules]
+  [./PhaseField]
+    [./Nonconserved]
+      [./c]
+        free_energy = E_el
+        kappa = kappa_op
+        mobility = L
+      [../]
+    [../]
+  [../]
+  [./TensorMechanics]
+    [./Master]
+      [./mech]
+        add_variables = true
+        strain = SMALL
+        save_in = 'resid_x resid_y resid_z'
+      [../]
+    [../]
+  [../]
 []
 
 [Variables]
@@ -20,14 +44,6 @@
   [./disp_z]
     block = 1
     scaling = 1
-  [../]
-  [./c]
-    block = 1
-    scaling = 1e1
-  [../]
-  [./b]
-    block = 1
-    scaling = 1e7
   [../]
 []
 
@@ -101,61 +117,27 @@
 []
 
 [Kernels]
-  [./pfbulk]
-    type = PFFracBulkRate
-    variable = c
-    block = 1
-    l = 0.01
-    beta = b
-    visco =1e-4
-    gc_prop_var = 'gc_prop'
-    G0_var = 'G0_pos'
-    dG0_dstrain_var = 'dG0_pos_dstrain'
-    disp_x = disp_x
-    disp_y = disp_y
-    disp_z = disp_z
-  [../]
   [./solid_x]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_x
-    displacements = 'disp_x disp_y disp_z'
     component = 0
-    block = 1
-    save_in = resid_x
     c = c
   [../]
   [./solid_y]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_y
-    displacements = 'disp_x disp_y disp_z'
     component = 1
-    block = 1
-    save_in = resid_y
     c = c
   [../]
   [./solid_z]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_z
-    displacements = 'disp_x disp_y disp_z'
     component = 2
-    block = 1
-    save_in = resid_z
     c = c
   [../]
   [./dcdt]
     type = TimeDerivative
     variable = c
-    block = 1
-  [../]
-  [./pfintvar]
-    type = PFFracIntVar
-    variable = b
-    block = 1
-  [../]
-  [./pfintcoupled]
-    type = PFFracCoupledInterface
-    variable = b
-    c = c
     block = 1
   [../]
 []
@@ -269,28 +251,29 @@
 []
 
 [Materials]
-  active = 'pfbulkmat elastic strain elasticity_tensor_concrete'
+  active = 'pfbulkmat define_mobility define_kappa elastic elasticity_tensor_concrete'
   [./pfbulkmat]
-    type = PFFracBulkRateMaterial
-    block = 1
-    gc = 87 #1e-3
+    type = GenericConstantMaterial
+    prop_names = 'gc_prop l visco'
+    prop_values = '1e-3 0.04 1e-4'
+  [../]
+  [./define_mobility]
+    type = ParsedMaterial
+    material_property_names = 'gc_prop visco'
+    f_name = L
+    function = '1.0/(gc_prop * visco)'
+  [../]
+  [./define_kappa]
+    type = ParsedMaterial
+    material_property_names = 'gc_prop l'
+    f_name = kappa_op
+    function = 'gc_prop * l'
   [../]
   [./elastic]
-    type = LinearIsoElasticPFDamage
-    block = 1
+    type = ComputeIsotropicLinearElasticPFFractureStress
     c = c
-    kdamage = 1e-8
-  [../]
-  [./elasticity_tensor]
-    type = ComputeElasticityTensor
-    block = 1
-    C_ijkl = '120.0 80.0'
-    fill_method = symmetric_isotropic
-  [../]
-  [./strain]
-    type = ComputeSmallStrain
-    block = 1
-    displacements = 'disp_x disp_y disp_z'
+    kdamage = 0
+    F_name = E_el
   [../]
   [./elasticity_tensor_concrete]
     #Creates the elasticity tensor using concrete parameters
@@ -343,7 +326,7 @@
   nl_abs_tol = 1e-6
   nl_rel_tol = 1e-6
   l_tol      = 1e-8
-  l_max_its = 30
+  l_max_its = 5 #30
   nl_max_its = 20
 
   dt = 1e-3
@@ -352,8 +335,9 @@
 #  num_steps = 100
 
   [./Predictor]
-    type = AdamsPredictor #SimplePredictor
-    scale = 1.0 
+    #type = AdamsPredictor
+    type = SimplePredictor
+    scale = 0.5 
   [../]
 []
 
