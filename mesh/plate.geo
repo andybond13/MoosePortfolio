@@ -1,5 +1,5 @@
 lc = 0.1;	
-mesh = lc/16; //lc/8 usually
+mesh = lc/8; //lc/8 usually;   lc/X, where X is mesh number 
 dimX = 1.0;				
 //dimY = Sqrt(0.2);	
 dimY = 1.0;

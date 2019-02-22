@@ -1,5 +1,4 @@
 [Mesh]
-#  displacements = 'disp_x disp_y disp_z' #Define displacements for deformed mesh
   type = FileMesh
   file = mesh/plateXY-3.msh 
   uniform_refine = 0
@@ -7,6 +6,31 @@
   boundary_name = 'left right front back'
   block_id = '1'
   block_name = 'vol'
+[]
+
+[GlobalParams]
+  displacements = 'disp_x disp_y disp_z'
+[]
+
+[Modules]
+  [./PhaseField]
+    [./Nonconserved]
+      [./c]
+        free_energy = F
+        kappa = kappa_op
+        mobility = L
+      [../]
+    [../]
+  [../]
+  [./TensorMechanics]
+    [./Master]
+      [./mech]
+        add_variables = true
+        strain = SMALL
+        save_in = 'resid_x resid_y resid_z'
+      [../]
+    [../]
+  [../]
 []
 
 [Variables]
@@ -24,10 +48,6 @@
   [./c]
     block = 1
     scaling = 1e1
-  [../]
-  [./b]
-    block = 1
-    scaling = 1e7
   [../]
 []
 
@@ -101,61 +121,27 @@
 []
 
 [Kernels]
-  [./pfbulk]
-    type = PFFracBulkRate
-    variable = c
-    block = 1
-    l = 0.01
-    beta = b
-    visco =1e-4
-    gc_prop_var = 'gc_prop'
-    G0_var = 'G0_pos'
-    dG0_dstrain_var = 'dG0_pos_dstrain'
-    disp_x = disp_x
-    disp_y = disp_y
-    disp_z = disp_z
-  [../]
   [./solid_x]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_x
-    displacements = 'disp_x disp_y disp_z'
     component = 0
-    block = 1
-    save_in = resid_x
     c = c
   [../]
   [./solid_y]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_y
-    displacements = 'disp_x disp_y disp_z'
     component = 1
-    block = 1
-    save_in = resid_y
     c = c
   [../]
   [./solid_z]
-    type = StressDivergencePFFracTensors
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_z
-    displacements = 'disp_x disp_y disp_z'
     component = 2
-    block = 1
-    save_in = resid_z
     c = c
   [../]
   [./dcdt]
     type = TimeDerivative
     variable = c
-    block = 1
-  [../]
-  [./pfintvar]
-    type = PFFracIntVar
-    variable = b
-    block = 1
-  [../]
-  [./pfintcoupled]
-    type = PFFracCoupledInterface
-    variable = b
-    c = c
     block = 1
   [../]
 []
@@ -269,28 +255,22 @@
 []
 
 [Materials]
-  active = 'pfbulkmat elastic strain elasticity_tensor_concrete'
   [./pfbulkmat]
-    type = PFFracBulkRateMaterial
-    block = 1
-    gc = 87 #1e-3
+    type = GenericConstantMaterial
+    prop_names = 'gc_prop l visco'
+    prop_values = '1e-3 0.04 1e-8'
   [../]
-  [./elastic]
-    type = LinearIsoElasticPFDamage
-    block = 1
-    c = c
-    kdamage = 1e-8
+  [./define_mobility]
+    type = ParsedMaterial
+    material_property_names = 'gc_prop visco'
+    f_name = L
+    function = '1.0/(gc_prop * visco)'
   [../]
-  [./elasticity_tensor]
-    type = ComputeElasticityTensor
-    block = 1
-    C_ijkl = '120.0 80.0'
-    fill_method = symmetric_isotropic
-  [../]
-  [./strain]
-    type = ComputeSmallStrain
-    block = 1
-    displacements = 'disp_x disp_y disp_z'
+  [./define_kappa]
+    type = ParsedMaterial
+    material_property_names = 'gc_prop l'
+    f_name = kappa_op
+    function = 'gc_prop * l'
   [../]
   [./elasticity_tensor_concrete]
     #Creates the elasticity tensor using concrete parameters
@@ -298,6 +278,38 @@
     poissons_ratio = 0.2
     type = ComputeIsotropicElasticityTensor
     block = 'vol'
+  [../]
+  [./damage_stress]
+    type = ComputeLinearElasticPFFractureStress
+    c = c
+    E_name = 'elastic_energy'
+    D_name = 'degradation'
+    F_name = 'local_fracture_energy'
+    decomposition_type = strain_vol_dev
+  [../]
+  [./degradation]
+    type = DerivativeParsedMaterial
+    f_name = degradation
+    args = 'c'
+    function = '(1.0-c)^2*(1.0 - eta) + eta'
+    constant_names       = 'eta'
+    constant_expressions = '0.0'
+    derivative_order = 2
+  [../]
+  [./local_fracture_energy]
+    type = DerivativeParsedMaterial
+    f_name = local_fracture_energy
+    args = 'c'
+    material_property_names = 'gc_prop l'
+    function = 'c^2 * gc_prop / 2 / l'
+    derivative_order = 2
+  [../]
+  [./fracture_driving_energy]
+    type = DerivativeSumMaterial
+    args = c
+    sum_materials = 'elastic_energy local_fracture_energy'
+    derivative_order = 2
+    f_name = F
   [../]
 []
 
@@ -319,6 +331,11 @@
     variable = resid_z
     block = 1
 #    boundary = 2
+  [./resid_c]
+    type = NodalSum
+    variable = resid_c
+    block = 1
+#    boundary = 2
   [../]
 []
 
@@ -327,6 +344,7 @@
   [./smp]
     type = SMP
     full = true
+#    solve_type = NEWTON
   [../]
 []
 
@@ -335,24 +353,23 @@
     scheme = bdf2
 
   solve_type = PJFNK
-  petsc_options_iname = '-pc_type -ksp_gmres_restart -sub_ksp_type -sub_pc_type -pc_asm_overlap'
-  petsc_options_value = 'asm      31                  preonly       lu           1'
-#  solve_type = NEWTON 
-#  petsc_options_iname = '-pc_type -pc_hypre_type -ksp_gmres_restart'
-#  petsc_options_value = 'hypre boomeramg 31'
+  petsc_options = '-snes_converged_reason -ksp_converged_reason'
+  #PETSC1: Settings from Mark Messner: https://groups.google.com/forum/?nomobile=true#!searchin/moose-users/predictor%7Csort:date/moose-users/VQukwKv0Kt0/foKCakujCAAJ
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
+  petsc_options_value = 'lu superlu_dist'
+
   nl_abs_tol = 1e-6
   nl_rel_tol = 1e-6
   l_tol      = 1e-8
-  l_max_its = 30
-  nl_max_its = 20
+  l_max_its = 20
+  nl_max_its = 30
 
-  dt = 1e-3
+  dt = 1e-4
   dtmin = 1e-10
   end_time = 0.4
-#  num_steps = 100
 
   [./Predictor]
-    type = AdamsPredictor #SimplePredictor
+    type = AdamsPredictor
     scale = 1.0 
   [../]
 []
