@@ -331,11 +331,6 @@
     variable = resid_z
     block = 1
 #    boundary = 2
-  [./resid_c]
-    type = NodalSum
-    variable = resid_c
-    block = 1
-#    boundary = 2
   [../]
 []
 
@@ -364,7 +359,7 @@
   l_max_its = 20
   nl_max_its = 30
 
-  dt = 1e-4
+  dt = 1e-5
   dtmin = 1e-10
   end_time = 0.4
 
