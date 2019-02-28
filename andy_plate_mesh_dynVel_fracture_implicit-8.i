@@ -105,6 +105,30 @@
     order = CONSTANT
     family = MONOMIAL
   [../]
+  [./strain_xx]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./strain_xy]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./strain_xz]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./strain_yy]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./strain_yz]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./strain_zz]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
 []
 
 [Functions]
@@ -221,6 +245,48 @@
     index_i = 2
     index_j = 2
   [../]
+  [./strain_xx]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_xx
+    index_i = 0
+    index_j = 0
+  [../]
+  [./strain_xy]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_xy
+    index_i = 0
+    index_j = 1
+  [../]
+  [./strain_xz]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_xz
+    index_i = 0
+    index_j = 2
+  [../]
+  [./strain_yy]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_yy
+    index_i = 1
+    index_j = 1
+  [../]
+  [./strain_yz]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_yz
+    index_i = 1
+    index_j = 2
+  [../]
+  [./strain_zz]
+    type = RankTwoAux
+    rank_two_tensor = total_strain
+    variable = strain_zz
+    index_i = 2
+    index_j = 2
+  [../]
 []
 
 [BCs]
@@ -317,26 +383,22 @@
   [./resid_x]
     type = NodalSum
     variable = resid_x
-#    block = 1
-    boundary = 2
+    boundary = 'right'
   [../]
   [./resid_y]
     type = NodalSum
     variable = resid_y
-#    block = 1
-    boundary = 2
+    boundary = 'right'
   [../]
   [./resid_z]
     type = NodalSum
     variable = resid_z
-#    block = 1
-    boundary = 2
+    boundary = 'right'
   [../]
   [./fd_disp]
     type = SideAverageValue
     variable = disp_x
-#    block = 1
-    boundary = 2
+    boundary = 'right'
   [../]
 []
 
@@ -365,7 +427,7 @@
   l_max_its = 20
   nl_max_its = 30
 
-  dt = 1e-5
+  dt = 1e-6
   dtmin = 1e-10
   end_time = 0.4
 
