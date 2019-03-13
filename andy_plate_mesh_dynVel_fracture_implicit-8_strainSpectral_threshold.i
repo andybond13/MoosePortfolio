@@ -1,6 +1,6 @@
 [Mesh]
   type = FileMesh
-  file = mesh/plateXY-3.msh 
+  file = mesh/plateXY-8.msh 
   uniform_refine = 0
   boundary_id = '2 3 4 5' #Assign names to boundaries to make things clearer
   boundary_name = 'left right front back'

@@ -1,6 +1,6 @@
 [Mesh]
   type = FileMesh
-  file = mesh/plateXY-3.msh 
+  file = mesh/plateXY-3_tet10.msh 
   uniform_refine = 0
   boundary_id = '2 3 4 5' #Assign names to boundaries to make things clearer
   boundary_name = 'left right front back'
@@ -19,6 +19,8 @@
         free_energy = F
         kappa = kappa_op
         mobility = L
+        order = SECOND
+        family = LAGRANGE
       [../]
     [../]
   [../]
@@ -28,7 +30,6 @@
         add_variables = true
         strain = SMALL
         save_in = 'resid_x resid_y resid_z'
-        volumetric_locking_correction = true
       [../]
     [../]
   [../]
@@ -37,97 +38,103 @@
 [Variables]
   [./disp_x]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./disp_y]
     block = 1
-    scaling = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./disp_z]
     block = 1
-    scaling = 1
-  [../]
-  [./c]
-    block = 1
-    scaling = 1e1
+    order = SECOND
+    family = LAGRANGE
   [../]
 []
 
 [AuxVariables]
   [./resid_x]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./resid_y]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./resid_z]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./stress_max]
     #Dependent variable used to visualize the maximum principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_med]
     #Dependent variable used to visualize the medium principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_min]
     #Dependent variable used to visualize the minimum principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./von_mises]
     #Dependent variable used to visualize the Von Mises stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xx]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_yy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_yz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_zz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xx]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_yy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_yz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_zz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
 []
@@ -325,7 +332,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.04 1e-8'
+    prop_values = '1e-3 0.02 1e-8'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -334,11 +341,10 @@
     function = '1.0/(gc_prop * visco)'
   [../]
   [./define_kappa]
-    #Kappa/2 = gradient term coefficient
     type = ParsedMaterial
     material_property_names = 'gc_prop l'
     f_name = kappa_op
-    function = 'gc_prop * l * 3.0/8.0 * 2.0'
+    function = 'gc_prop * l'
   [../]
   [./elasticity_tensor_concrete]
     #Creates the elasticity tensor using concrete parameters
@@ -353,7 +359,6 @@
     E_name = 'elastic_energy'
     D_name = 'degradation'
     F_name = 'local_fracture_energy'
-    barrier_energy = 'barrier'
     decomposition_type = strain_spectral
   [../]
   [./degradation]
@@ -370,7 +375,7 @@
     f_name = local_fracture_energy
     args = 'c'
     material_property_names = 'gc_prop l'
-    function = 'c * gc_prop / l * 3.0/8.0'
+    function = 'c^2 * gc_prop / 2 / l'
     derivative_order = 2
   [../]
   [./fracture_driving_energy]
@@ -379,12 +384,6 @@
     sum_materials = 'elastic_energy local_fracture_energy'
     derivative_order = 2
     f_name = F
-  [../]
-  [./barrier_energy]
-    type = ParsedMaterial
-    f_name = barrier
-    material_property_names = 'gc_prop l'
-    function = '3 * gc_prop / 16 / l'
   [../]
 []
 

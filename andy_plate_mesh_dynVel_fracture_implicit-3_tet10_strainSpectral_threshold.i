@@ -1,6 +1,6 @@
 [Mesh]
   type = FileMesh
-  file = mesh/plateXY-3.msh 
+  file = mesh/plateXY-3_tet10.msh 
   uniform_refine = 0
   boundary_id = '2 3 4 5' #Assign names to boundaries to make things clearer
   boundary_name = 'left right front back'
@@ -19,6 +19,8 @@
         free_energy = F
         kappa = kappa_op
         mobility = L
+        order = SECOND
+        family = LAGRANGE
       [../]
     [../]
   [../]
@@ -28,7 +30,6 @@
         add_variables = true
         strain = SMALL
         save_in = 'resid_x resid_y resid_z'
-        volumetric_locking_correction = true
       [../]
     [../]
   [../]
@@ -37,97 +38,103 @@
 [Variables]
   [./disp_x]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./disp_y]
     block = 1
-    scaling = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./disp_z]
     block = 1
-    scaling = 1
-  [../]
-  [./c]
-    block = 1
-    scaling = 1e1
+    order = SECOND
+    family = LAGRANGE
   [../]
 []
 
 [AuxVariables]
   [./resid_x]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./resid_y]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./resid_z]
     block = 1
+    order = SECOND
+    family = LAGRANGE
   [../]
   [./stress_max]
     #Dependent variable used to visualize the maximum principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_med]
     #Dependent variable used to visualize the medium principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_min]
     #Dependent variable used to visualize the minimum principal stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./von_mises]
     #Dependent variable used to visualize the Von Mises stress
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xx]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_xz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_yy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_yz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./stress_zz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xx]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_xz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_yy]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_yz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
   [./strain_zz]
-    order = CONSTANT
+    order = FIRST
     family = MONOMIAL
   [../]
 []
