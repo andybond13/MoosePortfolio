@@ -19,6 +19,8 @@
         free_energy = F
         kappa = kappa_op
         mobility = L
+        order = SECOND
+        family = LAGRANGE
       [../]
     [../]
   [../]
@@ -41,22 +43,14 @@
   [../]
   [./disp_y]
     block = 1
-    scaling = 1
     order = SECOND
     family = LAGRANGE
   [../]
   [./disp_z]
     block = 1
-    scaling = 1
     order = SECOND
     family = LAGRANGE
   [../]
-#  [./c]
-#    block = 1
-#    scaling = 1e1
-#    order = SECOND
-#    family = LAGRANGE
-#  [../]
 []
 
 [AuxVariables]
